@@ -16,7 +16,6 @@ int main() {
 		std::cout << "  Game Arguments: " << (uc_online.GetGameArguments().empty() ? "(none)" : uc_online.GetGameArguments()) << std::endl;
 		std::cout << std::endl;
 
-		uc_online.SetCustomAppID(480);
 		std::cout << "Using appid: " << uc_online.GetCurrentAppID() << " (Spacewar)" << std::endl;
 
 		uc_online.GetLogger()->Log("Now starting uc-online initialization");
