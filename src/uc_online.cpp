@@ -406,14 +406,15 @@ bool UCOnline::LaunchGame() {
 			args.push_back(nullptr);
 
 			auto newEnv = std::vector<char*>();
-			for(char** env = environ; *env; env++)
-			{
-				newEnv.emplace_back(*env);
-			}
 
 			std::stringstream steamAppId;
 			steamAppId << "SteamAppId=" << UCOnline::GetCurrentAppID();
 			newEnv.emplace_back(const_cast<char*>(steamAppId.str().c_str()));
+
+			for(char** env = environ; *env; env++)
+			{
+				newEnv.emplace_back(*env);
+			}
 
 			// Execute the game
 			execvpe(_gameExecutable.c_str(), args.data(), newEnv.data());
