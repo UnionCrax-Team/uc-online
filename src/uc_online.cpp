@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <sstream>
 #include <thread>
 #include <chrono>
 #include <cstring>
@@ -46,22 +47,22 @@ bool UCOnline::InitializeUCOnline() {
 			CreateAppIdFile();
 		}
 
-		LoadSteamApiLib();
+		//LoadSteamApiLib();
 
-		bool result = TryMultipleInitializationMethods();
+		//bool result = TryMultipleInitializationMethods();
 
-		if (!result) {
-			return false;
-		}
+		//if (!result) {
+		//	return false;
+		//}
 
 		_steamInitialized = true;
 		_logger->Log("Steam initialized successfully");
 
-		if (InitializeSteamInterfaces()) {
-			_logger->Log("Steam interfaces accessible");
-		} else {
-			_logger->LogWarning("Steam interfaces not accessible");
-		}
+		//if (InitializeSteamInterfaces()) {
+		//	_logger->Log("Steam interfaces accessible");
+		//} else {
+		//	_logger->LogWarning("Steam interfaces not accessible");
+		//}
 
 		return true;
 	} catch (const std::exception& ex) {
@@ -404,8 +405,18 @@ bool UCOnline::LaunchGame() {
 			}
 			args.push_back(nullptr);
 
+			auto newEnv = std::vector<char*>();
+			for(char** env = environ; *env; env++)
+			{
+				newEnv.emplace_back(*env);
+			}
+
+			std::stringstream steamAppId;
+			steamAppId << "SteamAppId=" << UCOnline::GetCurrentAppID();
+			newEnv.emplace_back(const_cast<char*>(steamAppId.str().c_str()));
+
 			// Execute the game
-			execvp(_gameExecutable.c_str(), args.data());
+			execvpe(_gameExecutable.c_str(), args.data(), newEnv.data());
 
 			// If execvp returns, it failed
 			_logger->LogError("execvp failed: " + std::string(strerror(errno)));
