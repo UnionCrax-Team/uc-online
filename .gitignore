@@ -79,3 +79,5 @@ desktop.ini
 /uc-online64.dir/Release
 /x64/Release/ALL_BUILD
 /x64
+_codeql_build_dir/
+_codeql_detected_source_root
