@@ -32,7 +32,7 @@ extern "C" {
 
 class UC_ONLINE_API UCOnline {
 public:
-    UCOnline(const std::string& iniFilePath = "config.ini");
+    UCOnline(const std::string& iniFilePath = "config.ini", const std::string& dllDirectory = "");
     ~UCOnline();
 
     bool InitializeUCOnline();
@@ -56,9 +56,6 @@ public:
     bool IsLoggingEnabled() const;
     void ClearLog();
 
-    std::string GetSteamApiDllPath() const;
-    void SetSteamApiDllPath(const std::string& dllPath);
-
 private:
     bool _steamInitialized = false;
     uint32_t _currentAppID;
@@ -66,7 +63,7 @@ private:
     std::unique_ptr<Logger> _logger;
     std::string _gameExecutable;
     std::string _gameArguments;
-    std::string _steamApiDllPath;
+    std::string _dllDirectory;
 
     bool TryMultipleInitializationMethods();
     void LoadSteamApiDll();

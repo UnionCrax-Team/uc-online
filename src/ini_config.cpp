@@ -56,7 +56,6 @@ void IniConfig::LoadConfig() {
     if (ucOnlineSection.find("GameExecutable") == ucOnlineSection.end()) ucOnlineSection["GameExecutable"] = "";
     if (ucOnlineSection.find("GameArguments") == ucOnlineSection.end()) ucOnlineSection["GameArguments"] = "";
     if (ucOnlineSection.find("SteamAppIdFile") == ucOnlineSection.end()) ucOnlineSection["SteamAppIdFile"] = "steam_appid.txt";
-    if (ucOnlineSection.find("SteamApiDLLPath") == ucOnlineSection.end()) ucOnlineSection["SteamApiDLLPath"] = "";
     
     // Check Logging section
     if (_configData.find("Logging") == _configData.end()) {
@@ -128,15 +127,6 @@ void IniConfig::SetGameArguments(const std::string& arguments) {
     SetValue("uc-online", "GameArguments", arguments);
 }
 
-std::string IniConfig::GetSteamApiDllPath() {
-    return GetValue("uc-online", "SteamApiDLLPath", "");
-}
-
-void IniConfig::SetSteamApiDllPath(const std::string& dllPath) {
-    SetValue("uc-online", "SteamApiDLLPath", dllPath);
-    SaveConfig();
-}
-
 std::string IniConfig::GetSteamAppIdFile() {
     return GetValue("uc-online", "SteamAppIdFile", "steam_appid.txt");
 }
@@ -170,8 +160,7 @@ void IniConfig::CreateDefaultConfig() {
         {"AppID", "480"},
         {"GameExecutable", ""},
         {"GameArguments", ""},
-        {"SteamAppIdFile", "steam_appid.txt"},
-        {"SteamApiDLLPath", ""}
+        {"SteamAppIdFile", "steam_appid.txt"}
     };
     
     _configData["Logging"] = {
@@ -201,12 +190,6 @@ void IniConfig::CreateDefaultConfig() {
         
         file << "# Set the path to the steam_appid.txt file to use. (If one does not exist, it will be generated with the appID set at the top.)\n";
         file << "SteamAppIdFile = steam_appid.txt\n\n";
-        
-        file << "# Path to steam_api.dll (leave empty to use default location - in the same folder next to the launcher.)\n";
-        file << "# Only set the path as the folder containing the dll relative to the launcher.\n";
-        file << "# Again, using UE5 games as an example:\n";
-        file << "# game folder\\Engine\\Binaries\\ThirdParty\\Steamworks\\Steamv153\\Win64\n";
-        file << "SteamApiDLLPath = \n\n";
         
         file << "[Logging]\n";
         file << "# Turns on logging. Not much gets logged, so it's not exactly useful. I recommend keeping it set to false, however with it being rewritten, it seems to behave differently.\n";

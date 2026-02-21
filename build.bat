@@ -118,22 +118,16 @@ echo ==========================================
 if not exist output mkdir output
 if not exist output\x86 mkdir output\x86
 if not exist output\x64 mkdir output\x64
-if not exist output\winmm-x86 mkdir output\winmm-x86
-if not exist output\winmm-x64 mkdir output\winmm-x64
 
 :: Copy x86 files
-copy /y build-x86\Release\uc-online.dll output\x86\
-copy /y build-x86\Release\uc-online.lib output\x86\
-copy /y build-x86\Release\uc-online.exp output\x86\
+copy /y build-x86\Release\steam_api.dll output\x86\
+copy /y build-x86\Release\steam_api.lib output\x86\
+copy /y build-x86\Release\steam_api.exp output\x86\
 
 :: Copy x64 files
-copy /y build-x64\Release\uc-online64.dll output\x64\
-copy /y build-x64\Release\uc-online64.lib output\x64\
-copy /y build-x64\Release\uc-online64.exp output\x64\
-
-:: Create winmm proxy versions
-copy /y output\x86\uc-online.dll output\winmm-x86\winmm.dll
-copy /y output\x64\uc-online64.dll output\winmm-x64\winmm.dll
+copy /y build-x64\Release\steam_api64.dll output\x64\
+copy /y build-x64\Release\steam_api64.lib output\x64\
+copy /y build-x64\Release\steam_api64.exp output\x64\
 
 echo.
 echo ==========================================
@@ -141,14 +135,16 @@ echo Build Summary
 echo ==========================================
 echo.
 echo x86 (32-bit) files in: output\x86\
-echo   - uc-online.dll (original name)
+echo   - steam_api.dll  (rename original to steam_api_orig.dll in game dir)
 echo.
 echo x64 (64-bit) files in: output\x64\
-echo   - uc-online64.dll (original name)
+echo   - steam_api64.dll  (rename original to steam_api64_orig.dll in game dir)
 echo.
-echo winmm proxy files:
-echo   - output\winmm-x86\winmm.dll (for 32-bit games)
-echo   - output\winmm-x64\winmm.dll (for 64-bit games)
+echo Installation instructions:
+echo   1. Rename the game's original steam_api.dll   to steam_api_orig.dll
+echo   2. Rename the game's original steam_api64.dll to steam_api64_orig.dll
+echo   3. Copy the built steam_api.dll / steam_api64.dll into the game directory
+echo   4. Place config.ini next to the DLL in the game directory
 echo.
 echo ==========================================
 echo Build completed successfully!

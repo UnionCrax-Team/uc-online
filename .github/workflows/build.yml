@@ -30,17 +30,11 @@ jobs:
         cd build-x86
         cmake --build . --config Release
 
-    - name: Upload x86 DLL
+    - name: Upload x86 steam_api.dll
       uses: actions/upload-artifact@v4
       with:
-        name: uc-online-x86
-        path: build-x86/Release/uc-online.dll
-
-    - name: Upload x86 winmm proxy
-      uses: actions/upload-artifact@v4
-      with:
-        name: winmm-x86
-        path: build-x86/Release/uc-online.dll
+        name: steam_api-x86
+        path: build-x86/Release/steam_api.dll
 
   build-x64:
     name: Build 64-bit DLL
@@ -64,17 +58,11 @@ jobs:
         cd build-x64
         cmake --build . --config Release
 
-    - name: Upload x64 DLL
+    - name: Upload x64 steam_api64.dll
       uses: actions/upload-artifact@v4
       with:
-        name: uc-online-x64
-        path: build-x64/Release/uc-online64.dll
-
-    - name: Upload x64 winmm proxy
-      uses: actions/upload-artifact@v4
-      with:
-        name: winmm-x64
-        path: build-x64/Release/uc-online64.dll
+        name: steam_api64-x64
+        path: build-x64/Release/steam_api64.dll
 
   release:
     name: Create Release Package
@@ -86,29 +74,20 @@ jobs:
     - name: Download x86 artifact
       uses: actions/download-artifact@v4
       with:
-        name: uc-online-x86
+        name: steam_api-x86
         path: ./release/x86
 
     - name: Download x64 artifact
       uses: actions/download-artifact@v4
       with:
-        name: uc-online-x64
+        name: steam_api64-x64
         path: ./release/x64
-
-    - name: Rename for winmm proxy
-      run: |
-        mkdir -p ./release/winmm-x86
-        mkdir -p ./release/winmm-x64
-        cp ./release/x86/uc-online.dll ./release/winmm-x86/winmm.dll
-        cp ./release/x64/uc-online64.dll ./release/winmm-x64/winmm.dll
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ./release/x86/uc-online.dll
-          ./release/x64/uc-online64.dll
-          ./release/winmm-x86/winmm.dll
-          ./release/winmm-x64/winmm.dll
+          ./release/x86/steam_api.dll
+          ./release/x64/steam_api64.dll
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

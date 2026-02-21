@@ -5,12 +5,12 @@
 #include <thread>
 #include <chrono>
 
-UCOnline::UCOnline(const std::string& iniFilePath) {
+UCOnline::UCOnline(const std::string& iniFilePath, const std::string& dllDirectory) {
+    _dllDirectory = dllDirectory;
     _config = std::make_unique<IniConfig>(iniFilePath);
     _currentAppID = _config->GetAppID();
     _gameExecutable = _config->GetGameExecutable();
     _gameArguments = _config->GetGameArguments();
-    _steamApiDllPath = _config->GetSteamApiDllPath();
 
     std::string logFile = _config->GetValue("Logging", "LogFile", "uc_online.log");
     bool enableLogging = _config->GetValue("Logging", "EnableLogging", "true") == "true";
@@ -18,7 +18,7 @@ UCOnline::UCOnline(const std::string& iniFilePath) {
 
     _logger->Log("uc-online initialized with appid: " + std::to_string(_currentAppID));
     _logger->Log("Game executable: " + (_gameExecutable.empty() ? "not configured" : _gameExecutable));
-    _logger->Log("steam_api.dll path: " + (_steamApiDllPath.empty() ? "default loading" : _steamApiDllPath));
+    _logger->Log("DLL directory: " + (_dllDirectory.empty() ? "current directory" : _dllDirectory));
 }
 
 UCOnline::~UCOnline() {
@@ -126,61 +126,29 @@ bool UCOnline::LaunchGame() {
 
 void UCOnline::LoadSteamApiDll() {
     try {
-#ifdef _WIN64
-        std::string dllName = "steam_api64.dll";
-#else
-        std::string dllName = "steam_api.dll";
-#endif
+        // The real steam_api.dll must be renamed to steam_api_orig.dll
+        // and placed in the same directory as this DLL (the game's directory).
+        std::string origDllName = "steam_api_orig.dll";
 
-        _logger->Log(std::string("Current process is ") +
-#ifdef _WIN64
-            std::string("64-bit")
-#else
-            std::string("32-bit")
-#endif
-            + std::string(", looking for ") + dllName);
-
-        if (_steamApiDllPath.empty()) {
-            _logger->Log("No custom steam_api.dll path configured, using default path: same directory as this is running from.");
-            // Load default
-            _steamApiModule = LoadLibraryA(dllName.c_str());
+        std::string dllPath;
+        if (!_dllDirectory.empty()) {
+            dllPath = _dllDirectory + "\\" + origDllName;
+            _logger->Log("Loading " + origDllName + " from game directory: " + dllPath);
         } else {
-            bool loadedFromCustom = false;
-            std::filesystem::path dllPath = std::filesystem::path(_steamApiDllPath) / dllName;
-            if (std::filesystem::exists(dllPath)) {
-                _logger->Log("Found " + dllName + " at: " + dllPath.string());
-                _steamApiModule = LoadLibraryA(dllPath.string().c_str());
-                if (_steamApiModule) {
-                    _logger->Log("Successfully loaded " + dllName + " from set path");
-                    loadedFromCustom = true;
-                } else {
-                    _logger->LogWarning("Failed to load " + dllName + " from set path, likely wasn't written correctly, so it's falling back to the default path - next to this / in the same directory.");
-                    _steamApiModule = LoadLibraryA(dllName.c_str());
-                }
-            } else {
-#ifdef _WIN64
-                std::filesystem::path win64Path = std::filesystem::path(_steamApiDllPath) / "win64" / dllName;
-                if (std::filesystem::exists(win64Path)) {
-                    _logger->Log("Found " + dllName + " at: " + win64Path.string());
-                    _steamApiModule = LoadLibraryA(win64Path.string().c_str());
-                    if (_steamApiModule) {
-                        _logger->Log("Successfully loaded " + dllName + " from win64 subdirectory");
-                        loadedFromCustom = true;
-                    } else {
-                        _logger->LogWarning("Failed to load " + dllName + " from win64 subdirectory, falling back to default loading");
-                        _steamApiModule = LoadLibraryA(dllName.c_str());
-                    }
-                } else {
-                    _logger->LogWarning(dllName + " not found at configured path, using default loading");
-                    _steamApiModule = LoadLibraryA(dllName.c_str());
-                }
-#else
-                _logger->LogWarning(dllName + " not found at configured path, using default loading");
-                _steamApiModule = LoadLibraryA(dllName.c_str());
-#endif
-            }
+            dllPath = origDllName;
+            _logger->Log("Loading " + origDllName + " from current directory (DLL directory unknown)");
         }
+
+        _steamApiModule = LoadLibraryA(dllPath.c_str());
+
+        if (!_steamApiModule && !_dllDirectory.empty()) {
+            // Fallback: try current directory
+            _logger->LogWarning("Failed to load " + origDllName + " from game directory, trying current directory");
+            _steamApiModule = LoadLibraryA(origDllName.c_str());
+        }
+
         if (_steamApiModule) {
+            _logger->Log("Successfully loaded " + origDllName);
             SteamAPI_Init = (SteamAPI_Init_t)GetProcAddress(_steamApiModule, "SteamAPI_Init");
             SteamAPI_InitFlat = (SteamAPI_InitFlat_t)GetProcAddress(_steamApiModule, "SteamAPI_InitFlat");
             SteamAPI_Shutdown = (SteamAPI_Shutdown_t)GetProcAddress(_steamApiModule, "SteamAPI_Shutdown");
@@ -190,11 +158,11 @@ void UCOnline::LoadSteamApiDll() {
             SteamApps = (SteamApps_t)GetProcAddress(_steamApiModule, "SteamApps");
             GetHSteamPipe = (GetHSteamPipe_t)GetProcAddress(_steamApiModule, "GetHSteamPipe");
         } else {
-            _logger->LogError("Failed to load steam_api.dll");
+            _logger->LogError("Failed to load " + origDllName + ". Make sure the original steam_api.dll has been renamed to steam_api_orig.dll in the game directory.");
         }
     } catch (const std::exception& ex) {
-        _logger->LogException(ex, "Error loading steam_api.dll");
-        std::cout << "Error loading steam_api.dll: " << ex.what() << std::endl;
+        _logger->LogException(ex, "Error loading steam_api_orig.dll");
+        std::cout << "Error loading steam_api_orig.dll: " << ex.what() << std::endl;
     }
 }
 
@@ -316,14 +284,4 @@ bool UCOnline::IsLoggingEnabled() const {
 
 void UCOnline::ClearLog() {
     _logger->ClearLog();
-}
-
-std::string UCOnline::GetSteamApiDllPath() const {
-    return _steamApiDllPath;
-}
-
-void UCOnline::SetSteamApiDllPath(const std::string& dllPath) {
-    _steamApiDllPath = dllPath;
-    _config->SetSteamApiDllPath(dllPath);
-    _config->SaveConfig();
 }

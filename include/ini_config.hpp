@@ -19,8 +19,6 @@ public:
     void SetGameExecutable(const std::string& gameExePath);
     std::string GetGameArguments();
     void SetGameArguments(const std::string& arguments);
-    std::string GetSteamApiDllPath();
-    void SetSteamApiDllPath(const std::string& dllPath);
     std::string GetSteamAppIdFile();
     void SetSteamAppIdFile(const std::string& filePath);
     bool GetEnableLogging();
