@@ -1117,9 +1117,9 @@ bool InitializeSteamApiProxy() {
     std::string dllDir = GetDllDirectory(g_hSelf);
     std::string origDllPath;
     if (!dllDir.empty()) {
-        origDllPath = dllDir + "\\steam_api64_orig.dll";
+        origDllPath = dllDir + "\\union-crax64.dll";
     } else {
-        origDllPath = "steam_api64_orig.dll";
+        origDllPath = "union-crax64.dll";
     }
 
     g_hOriginalSteamApi = LoadLibraryA(origDllPath.c_str());
