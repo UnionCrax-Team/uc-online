@@ -1094,8 +1094,8 @@ DECLARE_ORIG(SteamInternal_GameServer_Init);
 // ============================================================================
 
 static std::string GetDllDirectory(HMODULE hModule) {
-    char path[MAX_PATH];
-    if (GetModuleFileNameA(hModule, path, MAX_PATH) == 0) {
+    char path[32768]; // Maximum path length on modern Windows
+    if (GetModuleFileNameA(hModule, path, sizeof(path)) == 0) {
         return "";
     }
     std::string fullPath(path);
@@ -1107,8 +1107,8 @@ static std::string GetDllDirectory(HMODULE hModule) {
 }
 
 // ============================================================================
-// Load the original (renamed) steam_api.dll and resolve ALL function pointers
-// The real steam_api.dll must be renamed to steam_api64_orig.dll in the game dir.
+// Load the original (renamed) steam_api64.dll and resolve ALL function pointers
+// The real steam_api64.dll must be renamed to steam_api64_orig.dll in the game dir.
 // ============================================================================
 
 static HMODULE g_hSelf = nullptr;
@@ -1117,9 +1117,9 @@ bool InitializeSteamApiProxy() {
     std::string dllDir = GetDllDirectory(g_hSelf);
     std::string origDllPath;
     if (!dllDir.empty()) {
-        origDllPath = dllDir + "\\union-crax64.dll";
+        origDllPath = dllDir + "\\steam_api64_orig.dll";
     } else {
-        origDllPath = "union-crax64.dll";
+        origDllPath = "steam_api64_orig.dll";
     }
 
     g_hOriginalSteamApi = LoadLibraryA(origDllPath.c_str());

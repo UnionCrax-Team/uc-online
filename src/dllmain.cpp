@@ -1094,8 +1094,8 @@ DECLARE_ORIG(SteamInternal_GameServer_Init);
 // ============================================================================
 
 static std::string GetDllDirectory(HMODULE hModule) {
-    char path[MAX_PATH];
-    if (GetModuleFileNameA(hModule, path, MAX_PATH) == 0) {
+    char path[32768]; // Maximum path length on modern Windows
+    if (GetModuleFileNameA(hModule, path, sizeof(path)) == 0) {
         return "";
     }
     std::string fullPath(path);
@@ -1117,9 +1117,9 @@ bool InitializeSteamApiProxy() {
     std::string dllDir = GetDllDirectory(g_hSelf);
     std::string origDllPath;
     if (!dllDir.empty()) {
-        origDllPath = dllDir + "\\union-crax.dll";
+        origDllPath = dllDir + "\\steam_api_orig.dll";
     } else {
-        origDllPath = "union-crax.dll";
+        origDllPath = "steam_api_orig.dll";
     }
 
     g_hOriginalSteamApi = LoadLibraryA(origDllPath.c_str());

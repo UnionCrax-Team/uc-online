@@ -66,7 +66,7 @@ void UCOnline::ShutdownUCOnline() {
         _logger->Log("Shutting down...");
         if (SteamAPI_Shutdown) SteamAPI_Shutdown();
         _steamInitialized = false;
-        _logger->Log("Shutdown complete!");
+        _logger->Log("Shutdown complete");
     }
 }
 
@@ -275,7 +275,6 @@ Logger* UCOnline::GetLogger() {
 
 void UCOnline::SetLoggingEnabled(bool enabled) {
     _logger->SetLoggingEnabled(enabled);
-    _logger->Log("Logging " + std::string(enabled ? "enabled" : "disabled"));
 }
 
 bool UCOnline::IsLoggingEnabled() const {

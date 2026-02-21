@@ -10,8 +10,13 @@ Logger::Logger(const std::string& logFilePath, bool enableLogging)
 }
 
 void Logger::SetLoggingEnabled(bool enabled) {
+    if (_loggingEnabled && !enabled) {
+        Log("Logging disabled");
+    }
     _loggingEnabled = enabled;
-    Log("Logging " + std::string(enabled ? "enabled" : "disabled"));
+    if (enabled) {
+        Log("Logging enabled");
+    }
 }
 
 bool Logger::IsLoggingEnabledA() const {

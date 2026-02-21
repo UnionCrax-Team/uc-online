@@ -276,7 +276,6 @@ Logger* UCOnline64::GetLogger() {
 
 void UCOnline64::SetLoggingEnabled(bool enabled) {
     _logger->SetLoggingEnabled(enabled);
-    _logger->Log("Logging " + std::string(enabled ? "enabled" : "disabled"));
 }
 
 bool UCOnline64::IsLoggingEnabled() const {
