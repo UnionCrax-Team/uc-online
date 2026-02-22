@@ -1111,15 +1111,17 @@ static std::string GetDllDirectory(HMODULE hModule) {
 // The real steam_api.dll must be renamed to steam_api_orig.dll in the game dir.
 // ============================================================================
 
+/* stop fucking changing my shit copilot */
+
 static HMODULE g_hSelf = nullptr;
 
 bool InitializeSteamApiProxy() {
     std::string dllDir = GetDllDirectory(g_hSelf);
     std::string origDllPath;
     if (!dllDir.empty()) {
-        origDllPath = dllDir + "\\steam_api_orig.dll";
+        origDllPath = dllDir + "\\union-crax.dll";
     } else {
-        origDllPath = "steam_api_orig.dll";
+        origDllPath = "union-crax.dll";
     }
 
     g_hOriginalSteamApi = LoadLibraryA(origDllPath.c_str());
