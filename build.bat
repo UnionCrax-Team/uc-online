@@ -121,13 +121,9 @@ if not exist output\x64 mkdir output\x64
 
 :: Copy x86 files
 copy /y build-x86\Release\steam_api.dll output\x86\
-copy /y build-x86\Release\steam_api.lib output\x86\
-copy /y build-x86\Release\steam_api.exp output\x86\
 
 :: Copy x64 files
 copy /y build-x64\Release\steam_api64.dll output\x64\
-copy /y build-x64\Release\steam_api64.lib output\x64\
-copy /y build-x64\Release\steam_api64.exp output\x64\
 
 echo.
 echo ==========================================
@@ -135,14 +131,14 @@ echo Build Summary
 echo ==========================================
 echo.
 echo x86 (32-bit) files in: output\x86\
-echo   - steam_api.dll  (rename original to steam_api_orig.dll in game dir)
+echo   - steam_api.dll  (rename original to union-crax.dll in game dir)
 echo.
 echo x64 (64-bit) files in: output\x64\
-echo   - steam_api64.dll  (rename original to steam_api64_orig.dll in game dir)
+echo   - steam_api64.dll  (rename original to union-crax64.dll in game dir)
 echo.
 echo Installation instructions:
-echo   1. Rename the game's original steam_api.dll   to steam_api_orig.dll
-echo   2. Rename the game's original steam_api64.dll to steam_api64_orig.dll
+echo   1. Rename the game's original steam_api.dll   to union-crax.dll
+echo   2. Rename the game's original steam_api64.dll to union-crax64.dll
 echo   3. Copy the built steam_api.dll / steam_api64.dll into the game directory
 echo   4. Place config.ini next to the DLL in the game directory
 echo.

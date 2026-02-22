@@ -23,10 +23,6 @@ extern "C" {
     UC_ONLINE_API uint32_t UCOnline64_GetAppID(void* instance);
     UC_ONLINE_API bool UCOnline64_IsSteamInitialized(void* instance);
     UC_ONLINE_API bool UCOnline64_LaunchGame(void* instance);
-    UC_ONLINE_API void UCOnline64_SetGameExecutable(void* instance, const char* exePath);
-    UC_ONLINE_API void UCOnline64_SetGameArguments(void* instance, const char* arguments);
-    UC_ONLINE_API const char* UCOnline64_GetGameExecutable(void* instance);
-    UC_ONLINE_API const char* UCOnline64_GetGameArguments(void* instance);
     UC_ONLINE_API void UCOnline64_RunCallbacks(void* instance);
 }
 
@@ -44,10 +40,6 @@ public:
 
     void CreateAppIdFile();
     bool LaunchGame();
-    void SetGameExecutable(const std::string& gameExePath);
-    void SetGameArguments(const std::string& arguments);
-    std::string GetGameExecutable() const;
-    std::string GetGameArguments() const;
     void SaveConfig();
     void ReloadConfig();
 
@@ -61,8 +53,6 @@ private:
     uint32_t _currentAppID;
     std::unique_ptr<IniConfig> _config;
     std::unique_ptr<Logger> _logger;
-    std::string _gameExecutable;
-    std::string _gameArguments;
     std::string _dllDirectory;
 
     bool TryMultipleInitializationMethods();

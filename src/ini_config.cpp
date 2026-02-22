@@ -53,8 +53,6 @@ void IniConfig::LoadConfig() {
     
     std::unordered_map<std::string, std::string>& ucOnlineSection = _configData["uc-online"];
     if (ucOnlineSection.find("AppID") == ucOnlineSection.end()) ucOnlineSection["AppID"] = "480";
-    if (ucOnlineSection.find("GameExecutable") == ucOnlineSection.end()) ucOnlineSection["GameExecutable"] = "";
-    if (ucOnlineSection.find("GameArguments") == ucOnlineSection.end()) ucOnlineSection["GameArguments"] = "";
     if (ucOnlineSection.find("SteamAppIdFile") == ucOnlineSection.end()) ucOnlineSection["SteamAppIdFile"] = "steam_appid.txt";
     
     // Check Logging section
@@ -111,22 +109,6 @@ void IniConfig::SetAppID(uint32_t appId) {
     SetValue("uc-online", "AppID", std::to_string(appId));
 }
 
-std::string IniConfig::GetGameExecutable() {
-    return GetValue("uc-online", "GameExecutable", "");
-}
-
-void IniConfig::SetGameExecutable(const std::string& gameExePath) {
-    SetValue("uc-online", "GameExecutable", gameExePath);
-}
-
-std::string IniConfig::GetGameArguments() {
-    return GetValue("uc-online", "GameArguments", "");
-}
-
-void IniConfig::SetGameArguments(const std::string& arguments) {
-    SetValue("uc-online", "GameArguments", arguments);
-}
-
 std::string IniConfig::GetSteamAppIdFile() {
     return GetValue("uc-online", "SteamAppIdFile", "steam_appid.txt");
 }
@@ -158,8 +140,6 @@ void IniConfig::CreateDefaultConfig() {
     // First, initialize the config structure directly
     _configData["uc-online"] = {
         {"AppID", "480"},
-        {"GameExecutable", ""},
-        {"GameArguments", ""},
         {"SteamAppIdFile", "steam_appid.txt"}
     };
     
@@ -179,14 +159,6 @@ void IniConfig::CreateDefaultConfig() {
         file << "# (Please note that you will want to set it to a game you can get for free that is multiplayer. Anything else, and it won't work.)\n";
         file << "# Default appID is set to 480 (Spacewar), however you can change it to any appID you want.\n";
         file << "AppID = 480\n\n";
-        
-        file << "# Executable needs to be set directly. Unlike the dll, there is no 'default' for the exe.\n";
-        file << "# Using UE5 games as an example, the correct launcher path will look like this:\n";
-        file << "# game folder\\game folder\\Binaries\\Win64\\game folder-Win64-Shipping.exe\n";
-        file << "GameExecutable = \n\n";
-        
-        file << "# Set launch arguments where necessary - e.g., for Source Engine games like Half-Life: Source, set it to '-game hl1 -windowed' to launch it correctly.\n";
-        file << "GameArguments = \n\n";
         
         file << "# Set the path to the steam_appid.txt file to use. (If one does not exist, it will be generated with the appID set at the top.)\n";
         file << "SteamAppIdFile = steam_appid.txt\n\n";

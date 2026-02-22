@@ -8,16 +8,13 @@
 UCOnline64::UCOnline64(const std::string& iniFilePath, const std::string& dllDirectory) {
     _dllDirectory = dllDirectory;
     _config = std::make_unique<IniConfig>(iniFilePath);
-    _currentAppID = _config->GetAppID();
-    _gameExecutable = _config->GetGameExecutable();
-    _gameArguments = _config->GetGameArguments();
+    _currentAppID = 480;
 
     std::string logFile = _config->GetValue("Logging", "LogFile", "uc_online.log");
     bool enableLogging = _config->GetValue("Logging", "EnableLogging", "true") == "true";
     _logger = std::make_unique<Logger>(logFile, enableLogging);
 
     _logger->Log("uc-online64 initialized with appid: " + std::to_string(_currentAppID));
-    _logger->Log("Game executable: " + (_gameExecutable.empty() ? "not configured" : _gameExecutable));
     _logger->Log("DLL directory: " + (_dllDirectory.empty() ? "current directory" : _dllDirectory));
 }
 
@@ -28,14 +25,8 @@ UCOnline64::~UCOnline64() {
 
 bool UCOnline64::InitializeUCOnline() {
     try {
-        if (_currentAppID == 0) {
-            _logger->LogWarning("No appid set in the config.ini. This likely will not work.");
-            _logger->LogWarning("Please set appid in config.ini, if there is not one - there will be one after running this.");
-            _logger->LogWarning("Continuing without set appid.");
-        } else {
-            _logger->Log("Initializing Steam with appid: " + std::to_string(_currentAppID));
-            CreateAppIdFile();
-        }
+        _logger->Log("Initializing Steam with appid: " + std::to_string(_currentAppID));
+        CreateAppIdFile();
 
         LoadSteamApi64Dll();
 
@@ -98,17 +89,11 @@ bool UCOnline64::IsSteamInitialized() const {
 }
 
 void UCOnline64::CreateAppIdFile() {
-    if (_currentAppID == 0) {
-        _logger->Log("Skipping steam_appid.txt creation - no appid configured.");
-        _logger->Log("If there is one already, it will be ignored.");
-        return;
-    }
-
     try {
         std::ofstream file("steam_appid.txt");
         if (file.is_open()) {
             file << _currentAppID;
-            _logger->Log("Created steam_appid.txt with set appid: " + std::to_string(_currentAppID));
+            _logger->Log("Wrote steam_appid.txt with appid: " + std::to_string(_currentAppID));
         } else {
             std::cerr << "Failed to create steam_appid.txt, make sure you're running this in a directory like your Documents or Downloads folder." << std::endl;
             std::cerr << "(e.g., \"C:\\Users\\user\\Downloads\\game folder\")" << std::endl;
@@ -235,39 +220,14 @@ bool UCOnline64::InitializeSteamInterfaces() {
     }
 }
 
-
-void UCOnline64::SetGameExecutable(const std::string& gameExePath) {
-    _gameExecutable = gameExePath;
-    _config->SetGameExecutable(gameExePath);
-    _config->SaveConfig();
-}
-
-void UCOnline64::SetGameArguments(const std::string& arguments) {
-    _gameArguments = arguments;
-    _config->SetGameArguments(arguments);
-    _config->SaveConfig();
-}
-
-std::string UCOnline64::GetGameExecutable() const {
-    return _gameExecutable;
-}
-
-std::string UCOnline64::GetGameArguments() const {
-    return _gameArguments;
-}
-
 void UCOnline64::SaveConfig() {
     _config->SetAppID(_currentAppID);
-    _config->SetGameExecutable(_gameExecutable);
-    _config->SetGameArguments(_gameArguments);
     _config->SaveConfig();
 }
 
 void UCOnline64::ReloadConfig() {
     _config->LoadConfig();
     _currentAppID = _config->GetAppID();
-    _gameExecutable = _config->GetGameExecutable();
-    _gameArguments = _config->GetGameArguments();
 }
 
 Logger* UCOnline64::GetLogger() {
