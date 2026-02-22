@@ -110,7 +110,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: steam_api-x86-gcc
-        path: build-gcc-x86/steam_api
+        path: build-gcc-x86/libsteam_api.dll
 
   build-x64-gcc:
     name: Build 64-bit DLL (GCC / MinGW-w64)
@@ -149,7 +149,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: steam_api64-x64-gcc
-        path: build-gcc-x64/steam_api64
+        path: build-gcc-x64/libsteam_api64.dll
 
   # ============================================================================
   # Release packaging (tags only) — picks up MSVC artifacts
@@ -192,7 +192,7 @@ jobs:
         files: |
           ./release/x86/steam_api.dll
           ./release/x64/steam_api64.dll
-          ./release/x86-gcc/steam_api
-          ./release/x64-gcc/steam_api64
+          ./release/x86-gcc/libsteam_api.dll
+          ./release/x64-gcc/libsteam_api64.dll
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
