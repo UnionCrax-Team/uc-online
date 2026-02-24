@@ -1,88 +1,89 @@
-cmake_minimum_required(VERSION 3.13)
-project(uc-online VERSION 1.0.0 LANGUAGES CXX RC)
+name: Build Steam Proxy DLLs
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+on:
+  push:
+    branches: [ "dllsteamapi" ]
+  pull_request:
+    branches: [ "dllsteamapi" ]
 
-# Include directories
-include_directories(include)
+jobs:
 
-# ============================================================================
-# 32-bit DLL (steam_api.dll proxy)
-# ============================================================================
+# ======================================================
+# MinGW-w64 build (static runtime)
+# ======================================================
 
-add_library(steam_api SHARED
-    src/dllmain.cpp
-    src/steam_api_stubs.cpp
-    src/uc_online.cpp
-    src/ini_config.cpp
-    src/logger.cpp
-    src/resources.rc
-)
+  mingw:
 
-if(WIN32)
-    target_link_libraries(steam_api PRIVATE kernel32)
-    target_compile_definitions(steam_api PRIVATE IS_32BIT UC_ONLINE_EXPORTS)
+    runs-on: windows-latest
 
-    if(MSVC)
-        # MSVC linker: /DEF:<path>
-        # /arch:IA32 is only meaningful for x86 MSVC; it is set via the -A Win32
-        # generator flag when invoking CMake, so we only need the .def here.
-        set_target_properties(steam_api PROPERTIES
-            LINK_FLAGS "/DEF:\"${CMAKE_SOURCE_DIR}/src/steam_api_proxy.def\""
-        )
-    else()
-        # MinGW / GCC linker: pass the .def file as a positional argument.
-        # IMPORTANT: use the MINGW32 (i686) toolchain for 32-bit builds.
-        # Do NOT use the MINGW64 toolchain with -m32; it ships only 64-bit libs.
-        #
-        # -static-libgcc / -static-libstdc++ embed the GCC and C++ runtimes.
-        # -Wl,-Bstatic,-lpthread,-Bdynamic statically links winpthread so end
-        # users do not need libgcc_s_*.dll / libstdc++-6.dll / libwinpthread-1.dll.
-        target_link_options(steam_api PRIVATE
-            -static-libgcc
-            -static-libstdc++
-            -Wl,-Bstatic,-lpthread,-Bdynamic,-lwinpthread
-            "${CMAKE_SOURCE_DIR}/src/steam_api_proxy.def"
-        )
-    endif()
-endif()
+    strategy:
+      matrix:
+        arch: [x86, x64]
 
-# ============================================================================
-# 64-bit DLL (steam_api64.dll proxy)
-# ============================================================================
+    steps:
 
-add_library(steam_api64 SHARED
-    src/dllmain64.cpp
-    src/steam_api_stubs.cpp
-    src/uc_online64.cpp
-    src/ini_config.cpp
-    src/logger.cpp
-    src/resources.rc
-)
+      - name: Checkout
+        uses: actions/checkout@v4
 
-if(WIN32)
-    target_link_libraries(steam_api64 PRIVATE kernel32)
-    target_compile_definitions(steam_api64 PRIVATE IS_64BIT UC_ONLINE_EXPORTS)
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: ${{ matrix.arch }}
 
-    if(MSVC)
-        # MSVC linker: /DEF:<path> /MACHINE:X64
-        set_target_properties(steam_api64 PROPERTIES
-            LINK_FLAGS "/DEF:\"${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def\" /MACHINE:X64"
-        )
-    else()
-        # MinGW / GCC linker: pass the .def file as a positional argument.
-        # Use the MINGW64 (x86_64) toolchain for 64-bit builds.
-        target_link_options(steam_api64 PRIVATE
-            -static-libgcc
-            -static-libstdc++
-            -Wl,-Bstatic,-lpthread,-Bdynamic,-lwinpthread
-            "${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def"
-        )
-    endif()
-endif()
+      - name: Configure (MinGW)
+        run: |
+          cmake -S . -B build `
+            -G "MinGW Makefiles" `
+            -DCMAKE_BUILD_TYPE=Release
 
-# Copy config.ini if it exists
-if(EXISTS ${CMAKE_SOURCE_DIR}/config.ini)
-    configure_file(config.ini config.ini COPYONLY)
-endif()
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Verify dependencies
+        run: |
+          objdump -p build/*.dll | findstr "DLL Name"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mingw_${{ matrix.arch }}
+          path: build/*.dll
+
+
+# ======================================================
+# MSVC build (Visual Studio toolchain)
+# ======================================================
+
+  msvc:
+
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        arch: [Win32, x64]
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC Dev Environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Configure (MSVC)
+        run: |
+          cmake -S . -B build `
+            -G "Visual Studio 17 2022" `
+            -A ${{ matrix.arch }}
+
+      - name: Build
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: msvc_${{ matrix.arch }}
+          path: build/Release/*.dll
