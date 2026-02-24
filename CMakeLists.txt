@@ -74,28 +74,30 @@ if(WIN32)
         set_target_properties(steam_api64 PROPERTIES
             LINK_FLAGS "/DEF:\"${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def\" /MACHINE:X64"
         )
-   else()
+    else()
 
-    # MinGW / GCC linker (fully static runtime)
-    if(MINGW)
+        # MinGW / GCC linker (fully static runtime)
+        if(MINGW)
 
-        target_link_libraries(steam_api64 PRIVATE
-            kernel32
-            winpthread
-        )
+            target_link_libraries(steam_api64 PRIVATE
+                kernel32
+                winpthread
+            )
 
-        target_link_options(steam_api64 PRIVATE
-            -static
-            -static-libgcc
-            -static-libstdc++
-            -Wl,--as-needed
-            -Wl,--gc-sections
-            "${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def"
-        )
+            target_link_options(steam_api64 PRIVATE
+                -static
+                -static-libgcc
+                -static-libstdc++
+                -Wl,--as-needed
+                -Wl,--gc-sections
+                "${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def"
+            )
 
-    endif()
+        endif()
 
-endif()
+    endif() # if(MSVC)
+
+endif() # if(WIN32)
 
 # Copy config.ini if it exists
 if(EXISTS ${CMAKE_SOURCE_DIR}/config.ini)

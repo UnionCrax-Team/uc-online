@@ -18,7 +18,13 @@ jobs:
 
     strategy:
       matrix:
-        arch: [x86, x64]
+        include:
+          - arch: x86
+            target: steam_api
+            artifact_name: mingw_x86
+          - arch: x64
+            target: steam_api64
+            artifact_name: mingw_x64
 
     steps:
 
@@ -37,16 +43,17 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --target ${{ matrix.target }} --parallel
 
       - name: Verify dependencies
+        shell: cmd
         run: |
-          objdump -p build/*.dll | findstr "DLL Name"
+          for %%f in (build\*.dll) do objdump -p "%%f" | findstr "DLL Name"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mingw_${{ matrix.arch }}
+          name: ${{ matrix.artifact_name }}
           path: build/*.dll
 
 
@@ -60,7 +67,13 @@ jobs:
 
     strategy:
       matrix:
-        arch: [Win32, x64]
+        include:
+          - arch: Win32
+            target: steam_api
+            artifact_name: msvc_Win32
+          - arch: x64
+            target: steam_api64
+            artifact_name: msvc_x64
 
     steps:
 
@@ -80,10 +93,10 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build build --config Release --parallel
+          cmake --build build --config Release --target ${{ matrix.target }} --parallel
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: msvc_${{ matrix.arch }}
+          name: ${{ matrix.artifact_name }}
           path: build/Release/*.dll
