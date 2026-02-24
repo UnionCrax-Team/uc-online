@@ -1,198 +1,89 @@
-name: Build DLLs
+name: Build Steam Proxy DLLs
 
 on:
   push:
-    branches: [ main, linux, main-nosteamworks, main-noconsole-nosteamworks, dll, dllwinmm, dllsteamapi ]
+    branches: [ "dllsteamapi" ]
   pull_request:
-    branches: [ main, linux ]
-  workflow_dispatch:
+    branches: [ "dllsteamapi" ]
 
 jobs:
-  # ============================================================================
-  # MSVC builds (Visual Studio 2022)
-  # ============================================================================
 
-  build-x86:
-    name: Build 32-bit DLL (MSVC)
+# ======================================================
+# MinGW-w64 build (static runtime)
+# ======================================================
+
+  mingw:
+
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        arch: [x86, x64]
+
     steps:
-    - uses: actions/checkout@v4
 
-    - name: Install CMake
-      run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Configure CMake for x86
-      run: |
-        mkdir build-x86
-        cd build-x86
-        cmake .. -G "Visual Studio 17 2022" -A Win32
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: ${{ matrix.arch }}
 
-    - name: Build x86
-      run: |
-        cd build-x86
-        cmake --build . --config Release
+      - name: Configure (MinGW)
+        run: |
+          cmake -S . -B build `
+            -G "MinGW Makefiles" `
+            -DCMAKE_BUILD_TYPE=Release
 
-    - name: Upload x86 steam_api.dll
-      uses: actions/upload-artifact@v4
-      with:
-        name: steam_api-x86-msvc
-        path: build-x86/Release/steam_api.dll
+      - name: Build
+        run: cmake --build build --parallel
 
-  build-x64:
-    name: Build 64-bit DLL (MSVC)
+      - name: Verify dependencies
+        run: |
+          objdump -p build/*.dll | findstr "DLL Name"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mingw_${{ matrix.arch }}
+          path: build/*.dll
+
+
+# ======================================================
+# MSVC build (Visual Studio toolchain)
+# ======================================================
+
+  msvc:
+
     runs-on: windows-latest
 
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install CMake
-      run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-
-    - name: Configure CMake for x64
-      run: |
-        mkdir build-x64
-        cd build-x64
-        cmake .. -G "Visual Studio 17 2022" -A x64
-
-    - name: Build x64
-      run: |
-        cd build-x64
-        cmake --build . --config Release
-
-    - name: Upload x64 steam_api64.dll
-      uses: actions/upload-artifact@v4
-      with:
-        name: steam_api64-x64-msvc
-        path: build-x64/Release/steam_api64.dll
-
-  # ============================================================================
-  # MinGW-w64 / GCC builds
-  # ============================================================================
-
-  build-x86-gcc:
-    name: Build 32-bit DLL (GCC / MinGW-w64)
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [Win32, x64]
 
     steps:
-    - uses: actions/checkout@v4
 
-    # MSYS2 ships both 32-bit and 64-bit MinGW-w64 toolchains
-    - name: Set up MSYS2 with MinGW-w64 (32-bit)
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW32
-        update: true
-        install: >-
-          mingw-w64-i686-gcc
-          mingw-w64-i686-cmake
-          mingw-w64-i686-make
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Configure CMake for GCC x86
-      shell: msys2 {0}
-      run: |
-        mkdir build-gcc-x86
-        cd build-gcc-x86
-        cmake .. -G "MinGW Makefiles" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER=gcc \
-          -DCMAKE_CXX_COMPILER=g++
+      - name: Setup MSVC Dev Environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
 
-    - name: Build GCC x86
-      shell: msys2 {0}
-      run: |
-        cd build-gcc-x86
-        cmake --build .
+      - name: Configure (MSVC)
+        run: |
+          cmake -S . -B build `
+            -G "Visual Studio 17 2022" `
+            -A ${{ matrix.arch }}
 
-    - name: Upload x86 steam_api.dll (GCC)
-      uses: actions/upload-artifact@v4
-      with:
-        name: steam_api-x86-gcc
-        path: build-gcc-x86/libsteam_api.dll
+      - name: Build
+        run: |
+          cmake --build build --config Release --parallel
 
-  build-x64-gcc:
-    name: Build 64-bit DLL (GCC / MinGW-w64)
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up MSYS2 with MinGW-w64 (64-bit)
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        update: true
-        install: >-
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-make
-
-    - name: Configure CMake for GCC x64
-      shell: msys2 {0}
-      run: |
-        mkdir build-gcc-x64
-        cd build-gcc-x64
-        cmake .. -G "MinGW Makefiles" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER=gcc \
-          -DCMAKE_CXX_COMPILER=g++
-
-    - name: Build GCC x64
-      shell: msys2 {0}
-      run: |
-        cd build-gcc-x64
-        cmake --build .
-
-    - name: Upload x64 steam_api64.dll (GCC)
-      uses: actions/upload-artifact@v4
-      with:
-        name: steam_api64-x64-gcc
-        path: build-gcc-x64/libsteam_api64.dll
-
-  # ============================================================================
-  # Release packaging (tags only) — picks up MSVC artifacts
-  # ============================================================================
-
-  release:
-    name: Create Release Package
-    needs: [build-x86, build-x64, build-x86-gcc, build-x64-gcc]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-
-    steps:
-    - name: Download x86 artifact (MSVC)
-      uses: actions/download-artifact@v4
-      with:
-        name: steam_api-x86-msvc
-        path: ./release/x86
-
-    - name: Download x64 artifact (MSVC)
-      uses: actions/download-artifact@v4
-      with:
-        name: steam_api64-x64-msvc
-        path: ./release/x64
-
-    - name: Download x86 artifact (GCC)
-      uses: actions/download-artifact@v4
-      with:
-        name: steam_api-x86-gcc
-        path: ./release/x86-gcc
-
-    - name: Download x64 artifact (GCC)
-      uses: actions/download-artifact@v4
-      with:
-        name: steam_api64-x64-gcc
-        path: ./release/x64-gcc
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          ./release/x86/steam_api.dll
-          ./release/x64/steam_api64.dll
-          ./release/x86-gcc/libsteam_api.dll
-          ./release/x64-gcc/libsteam_api64.dll
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: msvc_${{ matrix.arch }}
+          path: build/Release/*.dll
