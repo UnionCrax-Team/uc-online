@@ -42,7 +42,7 @@ if(WIN32)
         target_link_options(steam_api PRIVATE
             -static-libgcc
             -static-libstdc++
-            -Wl,-Bstatic,-lpthread,-Bdynamic
+            -Wl,-Bstatic,-lpthread,-Bdynamic,-lwinpthread
             "${CMAKE_SOURCE_DIR}/src/steam_api_proxy.def"
         )
     endif()
@@ -76,7 +76,7 @@ if(WIN32)
         target_link_options(steam_api64 PRIVATE
             -static-libgcc
             -static-libstdc++
-            -Wl,-Bstatic,-lpthread,-Bdynamic
+            -Wl,-Bstatic,-lpthread,-Bdynamic,-lwinpthread
             "${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def"
         )
     endif()
