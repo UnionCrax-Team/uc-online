@@ -32,27 +32,27 @@ if(WIN32)
             LINK_FLAGS "/DEF:\"${CMAKE_SOURCE_DIR}/src/steam_api_proxy.def\""
         )
     else()
-        # MinGW / GCC linker: pass the .def file as a positional argument.
-        # IMPORTANT: use the MINGW32 (i686) toolchain for 32-bit builds.
-        # Do NOT use the MINGW64 toolchain with -m32; it ships only 64-bit libs.
-        #
-        # -static-libgcc / -static-libstdc++ embed the GCC and C++ runtimes.
-        # -Wl,-Bstatic,-lpthread,-Bdynamic statically links winpthread so end
-        # users do not need libgcc_s_*.dll / libstdc++-6.dll / libwinpthread-1.dll.
+
+    # MinGW / GCC linker (fully static runtime)
+    if(MINGW)
+
+        target_link_libraries(steam_api PRIVATE
+            kernel32
+            winpthread
+        )
+
         target_link_options(steam_api PRIVATE
             -static
-            -libgcc
-            -libstdc++
-            -Wl
-            -Bstatic
-            -lpthread
-            -Bdynamic
-            -lwinpthread
+            -static-libgcc
+            -static-libstdc++
+            -Wl,--as-needed
+            -Wl,--gc-sections
             "${CMAKE_SOURCE_DIR}/src/steam_api_proxy.def"
         )
-    endif()
-endif()
 
+    endif()
+
+endif()
 # ============================================================================
 # 64-bit DLL (steam_api64.dll proxy)
 # ============================================================================
@@ -75,20 +75,27 @@ if(WIN32)
         set_target_properties(steam_api64 PROPERTIES
             LINK_FLAGS "/DEF:\"${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def\" /MACHINE:X64"
         )
-    else()
-        # MinGW / GCC linker: pass the .def file as a positional argument.
-        # Use the MINGW64 (x86_64) toolchain for 64-bit builds.
+   else()
+
+    # MinGW / GCC linker (fully static runtime)
+    if(MINGW)
+
+        target_link_libraries(steam_api64 PRIVATE
+            kernel32
+            winpthread
+        )
+
         target_link_options(steam_api64 PRIVATE
             -static
-            -libgcc
-            -libstdc++
-            -Wl,-Bstatic
-            -lpthread
-            -Bdynamic
-            -lwinpthread
+            -static-libgcc
+            -static-libstdc++
+            -Wl,--as-needed
+            -Wl,--gc-sections
             "${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def"
         )
+
     endif()
+
 endif()
 
 # Copy config.ini if it exists
