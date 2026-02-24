@@ -50,16 +50,18 @@ void IniConfig::LoadConfig() {
     if (_configData.find("uc-online") == _configData.end()) {
         _configData["uc-online"] = {};
     }
-    
+
     std::unordered_map<std::string, std::string>& ucOnlineSection = _configData["uc-online"];
     if (ucOnlineSection.find("AppID") == ucOnlineSection.end()) ucOnlineSection["AppID"] = "480";
     if (ucOnlineSection.find("SteamAppIdFile") == ucOnlineSection.end()) ucOnlineSection["SteamAppIdFile"] = "steam_appid.txt";
-    
+    // OriginalDllPath defaults to empty — the code will use the built-in default name
+    if (ucOnlineSection.find("OriginalDllPath") == ucOnlineSection.end()) ucOnlineSection["OriginalDllPath"] = "";
+
     // Check Logging section
     if (_configData.find("Logging") == _configData.end()) {
         _configData["Logging"] = {};
     }
-    
+
     std::unordered_map<std::string, std::string>& loggingSection = _configData["Logging"];
     if (loggingSection.find("EnableLogging") == loggingSection.end()) loggingSection["EnableLogging"] = "false";
     if (loggingSection.find("LogFile") == loggingSection.end()) loggingSection["LogFile"] = "uc_online.log";
@@ -117,6 +119,14 @@ void IniConfig::SetSteamAppIdFile(const std::string& filePath) {
     SetValue("uc-online", "SteamAppIdFile", filePath);
 }
 
+std::string IniConfig::GetOriginalDllPath() {
+    return GetValue("uc-online", "OriginalDllPath", "");
+}
+
+void IniConfig::SetOriginalDllPath(const std::string& dllPath) {
+    SetValue("uc-online", "OriginalDllPath", dllPath);
+}
+
 bool IniConfig::GetEnableLogging() {
     std::string logStr = GetValue("Logging", "EnableLogging", "false");
     std::string lowerStr = logStr;
@@ -140,36 +150,44 @@ void IniConfig::CreateDefaultConfig() {
     // First, initialize the config structure directly
     _configData["uc-online"] = {
         {"AppID", "480"},
-        {"SteamAppIdFile", "steam_appid.txt"}
+        {"SteamAppIdFile", "steam_appid.txt"},
+        {"OriginalDllPath", ""}
     };
-    
+
     _configData["Logging"] = {
         {"EnableLogging", "false"},
         {"LogFile", "uc_online.log"}
     };
-    
+
     // Now save the default config to file
     std::ofstream file(_iniFilePath);
     if (file.is_open()) {
         file << "# uc-online configuration file\n";
         file << "# Generated automatically if not exists\n\n";
-        
+
         file << "[uc-online]\n";
         file << "# Set the appID to be used here, e.g., 730 for Counter-Strike 2\n";
         file << "# (Please note that you will want to set it to a game you can get for free that is multiplayer. Anything else, and it won't work.)\n";
         file << "# Default appID is set to 480 (Spacewar), however you can change it to any appID you want.\n";
         file << "AppID = 480\n\n";
-        
+
+        file << "# Path to the original (renamed) steam_api.dll / steam_api64.dll.\n";
+        file << "# Leave empty to use the default name (union-crax.dll / union-crax64.dll) in the same directory.\n";
+        file << "# You can set an absolute or relative path, e.g.:\n";
+        file << "#   OriginalDllPath = steam_api_orig.dll\n";
+        file << "#   OriginalDllPath = C:\\Games\\MyGame\\steam_api_orig.dll\n";
+        file << "OriginalDllPath =\n\n";
+
         file << "# Set the path to the steam_appid.txt file to use. (If one does not exist, it will be generated with the appID set at the top.)\n";
         file << "SteamAppIdFile = steam_appid.txt\n\n";
-        
+
         file << "[Logging]\n";
         file << "# Turns on logging. Not much gets logged, so it's not exactly useful. I recommend keeping it set to false, however with it being rewritten, it seems to behave differently.\n";
         file << "# It doesn't give you a chance to see what the issue was if you set something incorrectly, it just closes immediately or runs for a second and then closes. \n";
         file << "# If you need it, set it to true. Otherwise, there's nothing really worth logging.\n";
         file << "EnableLogging = false\n";
         file << "LogFile = uc_online.log\n";
-        
+
         file.flush();
         if (!file.good()) {
             std::cerr << "Error writing default config: " << _iniFilePath << std::endl;

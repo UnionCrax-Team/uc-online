@@ -17,6 +17,10 @@ public:
     void SetAppID(uint32_t appId);
     std::string GetSteamAppIdFile();
     void SetSteamAppIdFile(const std::string& filePath);
+    // Path to the original (renamed) steam_api.dll / steam_api64.dll.
+    // Leave empty to use the built-in default name (union-crax.dll / union-crax64.dll).
+    std::string GetOriginalDllPath();
+    void SetOriginalDllPath(const std::string& dllPath);
     bool GetEnableLogging();
     void SetEnableLogging(bool enable);
     std::string GetLogFile();

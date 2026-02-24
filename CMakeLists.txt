@@ -39,10 +39,12 @@ if(WIN32)
         # -static-libgcc / -static-libstdc++ embed the GCC and C++ runtimes.
         # -Wl,-Bstatic,-lpthread,-Bdynamic statically links winpthread so end
         # users do not need libgcc_s_*.dll / libstdc++-6.dll / libwinpthread-1.dll.
+        # -s strips debug symbols from the output DLL.
         target_link_options(steam_api PRIVATE
             -static-libgcc
             -static-libstdc++
             -Wl,-Bstatic,-lpthread,-Bdynamic
+            -s
             "${CMAKE_SOURCE_DIR}/src/steam_api_proxy.def"
         )
     endif()
@@ -73,10 +75,12 @@ if(WIN32)
     else()
         # MinGW / GCC linker: pass the .def file as a positional argument.
         # Use the MINGW64 (x86_64) toolchain for 64-bit builds.
+        # -s strips debug symbols from the output DLL.
         target_link_options(steam_api64 PRIVATE
             -static-libgcc
             -static-libstdc++
             -Wl,-Bstatic,-lpthread,-Bdynamic
+            -s
             "${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def"
         )
     endif()

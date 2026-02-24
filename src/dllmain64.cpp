@@ -1,4 +1,5 @@
 #include "uc_online64.hpp"
+#include "ini_config.hpp"
 #include <windows.h>
 #include <string>
 
@@ -6,6 +7,9 @@
 static UCOnline64* g_ucOnlineInstance = nullptr;
 static bool g_autoInitialized = false;
 bool g_deferInitialization = true;
+// Set to true once UCOnline64 has internally called SteamAPI_Init on the original DLL.
+// proxy_SteamAPI_Init checks this to avoid a double-call.
+bool g_steamApiInitCalledByUCOnline = false;
 
 // Handle to the original (renamed) steam_api DLL
 static HMODULE g_hOriginalSteamApi = nullptr;
@@ -47,11 +51,20 @@ static HMODULE g_hSelf = nullptr;
 
 bool InitializeSteamApiProxy() {
     std::string dllDir = GetDllDirectory(g_hSelf);
+
+    // Check config.ini for a custom original DLL path
+    std::string configPath = dllDir.empty() ? "config.ini" : (dllDir + "\\config.ini");
+    IniConfig cfg(configPath);
+    std::string configuredPath = cfg.GetOriginalDllPath();
+
     std::string origDllPath;
-    if (!dllDir.empty()) {
-        origDllPath = dllDir + "\\union-crax64.dll";
+    if (!configuredPath.empty()) {
+        bool isAbsolute = (configuredPath.size() >= 2 && configuredPath[1] == ':') ||
+                          (!configuredPath.empty() && (configuredPath[0] == '\\' || configuredPath[0] == '/'));
+        origDllPath = (!isAbsolute && !dllDir.empty()) ? (dllDir + "\\" + configuredPath) : configuredPath;
     } else {
-        origDllPath = "union-crax64.dll";
+        // Default: union-crax64.dll next to this DLL
+        origDllPath = dllDir.empty() ? "union-crax64.dll" : (dllDir + "\\union-crax64.dll");
     }
 
     g_hOriginalSteamApi = LoadLibraryA(origDllPath.c_str());
@@ -85,6 +98,8 @@ void AutoInitializeUCOnline() {
     if (g_ucOnlineInstance) {
         if (g_ucOnlineInstance->InitializeUCOnline()) {
             g_autoInitialized = true;
+            // UCOnline64 called SteamAPI_Init internally; tell the proxy stub not to call it again.
+            g_steamApiInitCalledByUCOnline = true;
         } else {
             delete g_ucOnlineInstance;
             g_ucOnlineInstance = nullptr;

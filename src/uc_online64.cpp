@@ -8,10 +8,11 @@
 UCOnline64::UCOnline64(const std::string& iniFilePath, const std::string& dllDirectory) {
     _dllDirectory = dllDirectory;
     _config = std::make_unique<IniConfig>(iniFilePath);
-    _currentAppID = 480;
+    _currentAppID = _config->GetAppID();
+    if (_currentAppID == 0) _currentAppID = 480;
 
     std::string logFile = _config->GetValue("Logging", "LogFile", "uc_online.log");
-    bool enableLogging = _config->GetValue("Logging", "EnableLogging", "true") == "true";
+    bool enableLogging = _config->GetEnableLogging();
     _logger = std::make_unique<Logger>(logFile, enableLogging);
 
     _logger->Log("uc-online64 initialized with appid: " + std::to_string(_currentAppID));
@@ -25,6 +26,9 @@ UCOnline64::~UCOnline64() {
 
 bool UCOnline64::InitializeUCOnline() {
     try {
+        _currentAppID = _config->GetAppID();
+        if (_currentAppID == 0) _currentAppID = 480;
+
         _logger->Log("Initializing Steam with appid: " + std::to_string(_currentAppID));
         CreateAppIdFile();
 
@@ -90,16 +94,29 @@ bool UCOnline64::IsSteamInitialized() const {
 
 void UCOnline64::CreateAppIdFile() {
     try {
-        std::ofstream file("steam_appid.txt");
+        // Use the configured SteamAppIdFile path; resolve relative to DLL directory
+        std::string appIdFileName = _config->GetSteamAppIdFile();
+        if (appIdFileName.empty()) appIdFileName = "steam_appid.txt";
+
+        std::string appIdFilePath;
+        if (!_dllDirectory.empty() &&
+            appIdFileName.find(':') == std::string::npos &&   // not absolute
+            appIdFileName.find('\\') == std::string::npos &&
+            appIdFileName.find('/') == std::string::npos) {
+            appIdFilePath = _dllDirectory + "\\" + appIdFileName;
+        } else {
+            appIdFilePath = appIdFileName;
+        }
+
+        std::ofstream file(appIdFilePath);
         if (file.is_open()) {
             file << _currentAppID;
-            _logger->Log("Wrote steam_appid.txt with appid: " + std::to_string(_currentAppID));
+            _logger->Log("Wrote " + appIdFilePath + " with appid: " + std::to_string(_currentAppID));
         } else {
-            std::cerr << "Failed to create steam_appid.txt, make sure you're running this in a directory like your Documents or Downloads folder." << std::endl;
-            std::cerr << "(e.g., \"C:\\Users\\user\\Downloads\\game folder\")" << std::endl;
+            _logger->LogWarning("Failed to create " + appIdFilePath);
         }
     } catch (const std::exception& ex) {
-        std::cerr << "Failed to create steam_appid.txt: " << ex.what() << std::endl;
+        _logger->LogException(ex, "Failed to create steam_appid.txt");
     }
 }
 
@@ -111,29 +128,44 @@ bool UCOnline64::LaunchGame() {
 
 void UCOnline64::LoadSteamApi64Dll() {
     try {
-        // The real steam_api64.dll must be renamed to steam_api64_orig.dll
-        // and placed in the same directory as this DLL (the game's directory).
-        std::string origDllName = "steam_api64_orig.dll";
+        // Determine the original DLL name/path:
+        //   1. Use OriginalDllPath from config if non-empty.
+        //   2. Otherwise fall back to "union-crax64.dll" in the DLL directory.
+        std::string configuredPath = _config->GetOriginalDllPath();
 
         std::string dllPath;
-        if (!_dllDirectory.empty()) {
-            dllPath = _dllDirectory + "\\" + origDllName;
-            _logger->Log("Loading " + origDllName + " from game directory: " + dllPath);
+        if (!configuredPath.empty()) {
+            // If the configured path is relative, resolve it against the DLL directory
+            bool isAbsolute = (configuredPath.size() >= 2 && configuredPath[1] == ':') ||
+                              (!configuredPath.empty() && (configuredPath[0] == '\\' || configuredPath[0] == '/'));
+            if (!isAbsolute && !_dllDirectory.empty()) {
+                dllPath = _dllDirectory + "\\" + configuredPath;
+            } else {
+                dllPath = configuredPath;
+            }
+            _logger->Log("Loading original steam_api64.dll from configured path: " + dllPath);
         } else {
-            dllPath = origDllName;
-            _logger->Log("Loading " + origDllName + " from current directory (DLL directory unknown)");
+            // Default: union-crax64.dll next to this DLL
+            std::string origDllName = "union-crax64.dll";
+            if (!_dllDirectory.empty()) {
+                dllPath = _dllDirectory + "\\" + origDllName;
+            } else {
+                dllPath = origDllName;
+            }
+            _logger->Log("Loading original steam_api64.dll (default): " + dllPath);
         }
 
         _steamApiModule = LoadLibraryA(dllPath.c_str());
 
         if (!_steamApiModule && !_dllDirectory.empty()) {
-            // Fallback: try current directory
-            _logger->LogWarning("Failed to load " + origDllName + " from game directory, trying current directory");
-            _steamApiModule = LoadLibraryA(origDllName.c_str());
+            // Fallback: try current directory with just the filename
+            std::string fallback = dllPath.substr(dllPath.find_last_of("\\/") + 1);
+            _logger->LogWarning("Failed to load from " + dllPath + ", trying current directory: " + fallback);
+            _steamApiModule = LoadLibraryA(fallback.c_str());
         }
 
         if (_steamApiModule) {
-            _logger->Log("Successfully loaded " + origDllName);
+            _logger->Log("Successfully loaded original steam_api64.dll");
             SteamAPI_Init = (SteamAPI_Init_t)GetProcAddress(_steamApiModule, "SteamAPI_Init");
             SteamAPI_InitFlat = (SteamAPI_InitFlat_t)GetProcAddress(_steamApiModule, "SteamAPI_InitFlat");
             SteamAPI_Shutdown = (SteamAPI_Shutdown_t)GetProcAddress(_steamApiModule, "SteamAPI_Shutdown");
@@ -143,15 +175,19 @@ void UCOnline64::LoadSteamApi64Dll() {
             SteamApps = (SteamApps_t)GetProcAddress(_steamApiModule, "SteamApps");
             GetHSteamPipe = (GetHSteamPipe_t)GetProcAddress(_steamApiModule, "GetHSteamPipe");
         } else {
-            _logger->LogError("Failed to load " + origDllName + ". Make sure the original steam_api64.dll has been renamed to steam_api64_orig.dll in the game directory.");
+            _logger->LogError("Failed to load original steam_api64.dll from: " + dllPath +
+                              ". Set OriginalDllPath in config.ini or rename the original to union-crax64.dll.");
         }
     } catch (const std::exception& ex) {
-        _logger->LogException(ex, "Error loading steam_api64_orig.dll");
-        std::cout << "Error loading steam_api64_orig.dll: " << ex.what() << std::endl;
+        _logger->LogException(ex, "Error loading original steam_api64.dll");
     }
 }
 
 bool UCOnline64::TryMultipleInitializationMethods() {
+    // Write steam_appid.txt with the configured AppID immediately before calling
+    // SteamAPI_Init so that Steam picks up the correct AppID from the file.
+    CreateAppIdFile();
+
     if (!SteamAPI_Init) return false;
 
     char errorMsg[1024] = {0};
@@ -164,6 +200,8 @@ bool UCOnline64::TryMultipleInitializationMethods() {
         _logger->Log("SteamAPI_Init failed: " + std::string(errorMsg));
 
         if (SteamAPI_InitFlat) {
+            // Re-write the file in case Steam cleared it
+            CreateAppIdFile();
             char errorMsgFlat[1024] = {0};
             bool resultFlat = SteamAPI_InitFlat(errorMsgFlat);
 
@@ -228,6 +266,7 @@ void UCOnline64::SaveConfig() {
 void UCOnline64::ReloadConfig() {
     _config->LoadConfig();
     _currentAppID = _config->GetAppID();
+    if (_currentAppID == 0) _currentAppID = 480;
 }
 
 Logger* UCOnline64::GetLogger() {
