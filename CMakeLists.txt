@@ -41,15 +41,17 @@ if(WIN32)
         # users do not need libgcc_s_*.dll / libstdc++-6.dll / libwinpthread-1.dll.
         # -s strips debug symbols from the output DLL.
         target_link_options(steam_api PRIVATE
+            -static
             -static-libgcc
             -static-libstdc++
-            -Wl,-Bstatic,-lpthread,-Bdynamic
-            -s
+            -Wl,--as-needed
+            -Wl,--gc-sections
             "${CMAKE_SOURCE_DIR}/src/steam_api_proxy.def"
         )
-    endif()
-endif()
 
+    endif()
+
+endif()
 # ============================================================================
 # 64-bit DLL (steam_api64.dll proxy)
 # ============================================================================
@@ -72,18 +74,27 @@ if(WIN32)
         set_target_properties(steam_api64 PROPERTIES
             LINK_FLAGS "/DEF:\"${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def\" /MACHINE:X64"
         )
-    else()
-        # MinGW / GCC linker: pass the .def file as a positional argument.
-        # Use the MINGW64 (x86_64) toolchain for 64-bit builds.
-        # -s strips debug symbols from the output DLL.
+   else()
+
+    # MinGW / GCC linker (fully static runtime)
+    if(MINGW)
+
+        target_link_libraries(steam_api64 PRIVATE
+            kernel32
+            winpthread
+        )
+
         target_link_options(steam_api64 PRIVATE
+            -static
             -static-libgcc
             -static-libstdc++
-            -Wl,-Bstatic,-lpthread,-Bdynamic
-            -s
+            -Wl,--as-needed
+            -Wl,--gc-sections
             "${CMAKE_SOURCE_DIR}/src/steam_api64_proxy.def"
         )
+
     endif()
+
 endif()
 
 # Copy config.ini if it exists
