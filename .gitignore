@@ -2,7 +2,7 @@
 build*/
 out/
 bin/
-lib/
+output/
 
 # CMake generated files
 CMakeCache.txt
@@ -37,19 +37,16 @@ _deps/
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
 *.pdb
 *.ilk
 *.exp
 *.lib
 
 # Compiled Static libraries
-*.a
 *.la
 *.lai
 
 # Executables
-*.exe
 *.out
 *.app
 
@@ -79,3 +76,4 @@ desktop.ini
 /uc-online64.dir/Release
 /x64/Release/ALL_BUILD
 /x64
+

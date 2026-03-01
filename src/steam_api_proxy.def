@@ -1,4 +1,5 @@
 LIBRARY steam_api
+
 EXPORTS
     GetHSteamPipe = proxy_GetHSteamPipe @1
     GetHSteamUser = proxy_GetHSteamUser @2

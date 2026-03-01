@@ -1,17 +1,3 @@
-// steam_api_exports.inc
-// X-macro list of all steam_api / steam_api64 exports.
-// Usage: define STEAM_EXPORT(name) before including this file, then #undef it.
-//
-// Example - declare FARPROC variables:
-//   #define STEAM_EXPORT(name) FARPROC orig_##name = nullptr;
-//   #include "steam_api_exports.inc"
-//   #undef STEAM_EXPORT
-//
-// Example - resolve via GetProcAddress:
-//   #define STEAM_EXPORT(name) orig_##name = GetProcAddress(hDll, #name);
-//   #include "steam_api_exports.inc"
-//   #undef STEAM_EXPORT
-
 STEAM_EXPORT(GetHSteamPipe)
 STEAM_EXPORT(GetHSteamUser)
 STEAM_EXPORT(SteamAPI_GetHSteamPipe)

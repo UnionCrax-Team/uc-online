@@ -3,8 +3,8 @@
 IDI_ICON1 ICON "icon.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
+ FILEVERSION 2,0,0,0
+ PRODUCTVERSION 2,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -21,20 +21,20 @@ BEGIN
         BEGIN
             VALUE "CompanyName",      "union-crax.xyz"
             VALUE "FileDescription",  "uc-online DLL Injector"
-            VALUE "FileVersion",      "1.0.0.6"
-#ifdef IS_64BIT
+            VALUE "FileVersion",      "2.0.0.0"
+#if IS_64BIT
             VALUE "InternalName",     "uc-online64"
 #else
             VALUE "InternalName",     "uc-online"
 #endif
             VALUE "LegalCopyright",   "veeanti / union-crax.xyz | 2026"
-#ifdef IS_64BIT
-            VALUE "OriginalFilename", "steam_api64.dll"
+#if IS_64BIT
+            VALUE "OriginalFilename", "uc-online64.dll"
 #else
-            VALUE "OriginalFilename", "steam_api.dll"
+            VALUE "OriginalFilename", "uc-online.dll"
 #endif
             VALUE "ProductName",      "uc-online"
-            VALUE "ProductVersion",   "1.0.0.6"
+            VALUE "ProductVersion",   "2.0.0.0"
         END
     END
 
