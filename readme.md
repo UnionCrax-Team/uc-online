@@ -101,3 +101,15 @@ One idea I had is to try making this MacOS compatible, but I have no clue how to
 
 - https://union-crax.xyz/ - come check us out and maybe even put in a request!
 - https://vee-anti.xyz/ - my personal site (made by Lou) I use to learn typescript and nextjs for random and silly additions that I want to try adding in lol. learn a bit more about me too!
+
+====================
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=veeeanti%2Fuc-online&type=date&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=veeeanti/uc-online&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=veeeanti/uc-online&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=veeeanti/uc-online&type=date&legend=bottom-right" />
+ </picture>
+</a>
