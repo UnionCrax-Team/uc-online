@@ -1,3 +1,7 @@
+# __Attention:__ uc-online2 is now available, [you can find it here on the new repo](https://github.com/veeeanti/uc-online2) - it is still in its early stages however, expect issues and instability!
+
+====================
+
 ## __When forking this repo, PLEASE make sure to toggle off the "only fork main branch" option so you can work with all versions / branches and push your modifications to them as needed and build them too using GitHub actions. if you make a new branch, add in the name of the branch in the workflow files for main and new branch to have it build correctly. if you want to contribute, contact me on discord or create a pull request if you can and I'll look at it and we'll go from there.__ 
 
 ====================
