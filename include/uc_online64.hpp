@@ -25,7 +25,7 @@ public:
     bool IsSteamInitialized() const;
     bool WasRestartRequested() const;
 
-    void CreateAppIdFile();
+    bool CreateAppIdFile();
     bool LaunchGame();
     void SetGameExecutable(const std::string& gameExePath);
     void SetGameArguments(const std::string& arguments);
