@@ -77,7 +77,7 @@ void IniConfig::SetValue(const std::string& section, const std::string& key, con
 }
 
 uint32_t IniConfig::GetAppID() {
-    std::string appIdStr = GetValue("uc-online", "AppId", GetValue("uc-online", "AppID", "0"));
+    std::string appIdStr = GetValue("uc-online", "AppID", "0");
     try {
         return std::stoul(appIdStr);
     } catch (...) {
@@ -86,7 +86,7 @@ uint32_t IniConfig::GetAppID() {
 }
 
 void IniConfig::SetAppID(uint32_t appId) {
-    SetValue("uc-online", "AppId", std::to_string(appId));
+    SetValue("uc-online", "AppID", std::to_string(appId));
 }
 
 std::string IniConfig::GetGameExecutable() {
@@ -126,10 +126,10 @@ void IniConfig::SetSteamAppIdFile(const std::string& appIdFilePath) {
 void IniConfig::CreateDefaultConfig() {
     std::string defaultConfig = R"(
 [uc-online]
-# Set the AppId to be used here, e.g., 730 for Counter-Strike 2)
+# Set the AppID to be used here, e.g., 730 for Counter-Strike 2)
 # (Please note that you will want to set it to a game you can get for free that is multiplayer. Anything else, and it won't work.)
-# Default AppId is set to 480 (Spacewar), however you can change it to any AppId you want.
-AppId = 480
+# Default AppID is set to 480 (Spacewar), however you can change it to any AppID you want.
+AppID = 480
 
 # Executable needs to be set directly.
 # Unlike the dll, there is no 'default' for the exe.
