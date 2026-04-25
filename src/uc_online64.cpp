@@ -34,17 +34,17 @@ bool UCOnline64::InitializeUCOnline() {
         _restartRequested = false;
         _steamInitialized = false;
 
-        // Set environment variables for child process inheritance
-        std::string appIdStr = std::to_string(_currentAppID);
-        SetEnvironmentVariableA("SteamAppId", appIdStr.c_str());
-        SetEnvironmentVariableA("SteamGameId", appIdStr.c_str());
-        _logger->Log("Set SteamAppId/SteamGameId environment variables for child process inheritance.");
-
         if (_currentAppID == 0) {
             _logger->LogWarning("No appid set in the config.ini. This likely will not work.");
             _logger->LogWarning("Please set appid in config.ini, if there is not one - there will be one after running this.");
             _logger->LogWarning("Continuing without set appid.");
         } else {
+            // Set environment variables for child process inheritance
+            std::string appIdStr = std::to_string(_currentAppID);
+            SetEnvironmentVariableA("SteamAppId", appIdStr.c_str());
+            SetEnvironmentVariableA("SteamGameId", appIdStr.c_str());
+            _logger->Log("Set SteamAppId/SteamGameId environment variables for child process inheritance.");
+
             CreateAppIdFile();
         }
 
