@@ -22,6 +22,8 @@ public:
     void SetGameArguments(const std::string& arguments);
     std::string GetSteamApiDllPath();
     void SetSteamApiDllPath(const std::string& dllPath);
+    std::string GetSteamAppIdFile();
+    void SetSteamAppIdFile(const std::string& appIdFilePath);
 
 private:
     std::string _iniFilePath;

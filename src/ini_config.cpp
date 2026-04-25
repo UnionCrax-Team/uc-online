@@ -77,7 +77,7 @@ void IniConfig::SetValue(const std::string& section, const std::string& key, con
 }
 
 uint32_t IniConfig::GetAppID() {
-    std::string appIdStr = GetValue("uc-online", "AppID", "0");
+    std::string appIdStr = GetValue("uc-online", "AppId", GetValue("uc-online", "AppID", "0"));
     try {
         return std::stoul(appIdStr);
     } catch (...) {
@@ -86,7 +86,7 @@ uint32_t IniConfig::GetAppID() {
 }
 
 void IniConfig::SetAppID(uint32_t appId) {
-    SetValue("uc-online", "AppID", std::to_string(appId));
+    SetValue("uc-online", "AppId", std::to_string(appId));
 }
 
 std::string IniConfig::GetGameExecutable() {
@@ -114,15 +114,25 @@ void IniConfig::SetSteamApiDllPath(const std::string& dllPath) {
     SaveConfig();
 }
 
+std::string IniConfig::GetSteamAppIdFile() {
+    return GetValue("uc-online", "SteamAppIdFile", "steam_appid.txt");
+}
+
+void IniConfig::SetSteamAppIdFile(const std::string& appIdFilePath) {
+    SetValue("uc-online", "SteamAppIdFile", appIdFilePath);
+    SaveConfig();
+}
+
 void IniConfig::CreateDefaultConfig() {
     std::string defaultConfig = R"(
 [uc-online]
-# Set the appID to be used here, e.g., 730 for Counter-Strike 2)
+# Set the AppId to be used here, e.g., 730 for Counter-Strike 2)
 # (Please note that you will want to set it to a game you can get for free that is multiplayer. Anything else, and it won't work.)
-# Default appID is set to 480 (Spacewar), however you can change it to any appID you want.
-AppID = 480
+# Default AppId is set to 480 (Spacewar), however you can change it to any AppId you want.
+AppId = 480
 
-# Executable needs to be set directly. Unlike the dll, there is no 'default' for the exe.
+# Executable needs to be set directly.
+# Unlike the dll, there is no 'default' for the exe.
 # Using UE5 games as an example, the correct launcher path will look like this:
 # game folder\game folder\Binaries\Win64\game folder-Win64-Shipping.exe
 GameExecutable = 

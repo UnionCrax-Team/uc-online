@@ -23,6 +23,7 @@ public:
     void SetCustomAppID(uint32_t appID);
     uint32_t GetCurrentAppID() const;
     bool IsSteamInitialized() const;
+    bool WasRestartRequested() const;
 
     void CreateAppIdFile();
     bool LaunchGame();
@@ -40,15 +41,19 @@ public:
 
     std::string GetSteamApiDllPath() const;
     void SetSteamApiDllPath(const std::string& dllPath);
+    std::string GetSteamAppIdFile() const;
+    void SetSteamAppIdFile(const std::string& appIdFilePath);
 
 private:
     bool _steamInitialized = false;
+    bool _restartRequested = false;
     uint32_t _currentAppID;
     std::unique_ptr<IniConfig> _config;
     std::unique_ptr<Logger> _logger;
     std::string _gameExecutable;
     std::string _gameArguments;
     std::string _steamApiDllPath;
+    std::string _steamAppIdFile;
 
     bool InitializeSteamInterfaces();
     bool InitializeSteamGameServer();
