@@ -22,6 +22,11 @@ int main() {
         uc_online.GetLogger()->Log("Appid set to: " + std::to_string(uc_online.GetCurrentAppID()));
 
         if (!uc_online.InitializeUCOnline()) {
+            if (uc_online.WasRestartRequested()) {
+                std::cout << "Steam requested a restart. Exiting so Steam can relaunch the app." << std::endl;
+                return 0;
+            }
+
             uc_online.GetLogger()->LogError("uc-online initialization failed");
             std::cout << "Failed to initialize Steam with appid " << uc_online.GetCurrentAppID() << "." << std::endl;
             std::cout << "This usually means you don't own this app on your Steam account." << std::endl;
