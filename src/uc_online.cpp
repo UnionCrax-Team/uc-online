@@ -12,6 +12,7 @@ UCOnline::UCOnline(const std::string& iniFilePath) {
     _gameExecutable = _config->GetGameExecutable();
     _gameArguments = _config->GetGameArguments();
     _steamApiDllPath = _config->GetSteamApiDllPath();
+    _steamAppIdFile = _config->GetSteamAppIdFile();
 
     std::string logFile = _config->GetValue("Logging", "LogFile", "uc_online.log");
     bool enableLogging = _config->GetValue("Logging", "EnableLogging", "true") == "true";
@@ -20,6 +21,7 @@ UCOnline::UCOnline(const std::string& iniFilePath) {
     _logger->Log("uc-online initialized with appid: " + std::to_string(_currentAppID));
     _logger->Log("Game executable: " + (_gameExecutable.empty() ? "not configured" : _gameExecutable));
     _logger->Log("steam_api.dll path: " + (_steamApiDllPath.empty() ? "default loading" : _steamApiDllPath));
+    _logger->Log("steam_appid.txt path: " + _steamAppIdFile);
 }
 
 UCOnline::~UCOnline() {
@@ -29,23 +31,38 @@ UCOnline::~UCOnline() {
 
 bool UCOnline::InitializeUCOnline() {
     try {
+        _restartRequested = false;
+        _steamInitialized = false;
+
         if (_currentAppID == 0) {
             _logger->LogWarning("No appid set in the config.ini. This likely will not work.");
             _logger->LogWarning("Please set appid in config.ini, if there is not one - there will be one after running this.");
             _logger->LogWarning("Continuing without set appid.");
         } else {
-            _logger->Log("Initializing Steam with appid: " + std::to_string(_currentAppID));
-            CreateAppIdFile();
+            // Set environment variables for child process inheritance
+            std::string appIdStr = std::to_string(_currentAppID);
+            SetEnvironmentVariableA("SteamAppId", appIdStr.c_str());
+            SetEnvironmentVariableA("SteamGameId", appIdStr.c_str());
+            _logger->Log("Set SteamAppId/SteamGameId environment variables for child process inheritance.");
+
+            if (!CreateAppIdFile()) {
+                return false;
+            }
         }
+
+        // Initialize Steam in the launcher process so Steam registers "playing" status
+        _logger->Log("Initializing Steam with appid: " + std::to_string(_currentAppID));
 
         if (SteamAPI_RestartAppIfNecessary(_currentAppID)) {
             _logger->Log("Steam requested app restart");
+            _restartRequested = true;
             return false;
         }
 
         SteamErrMsg errorMsg;
         if (SteamAPI_InitEx(&errorMsg) != k_ESteamAPIInitResult_OK) {
-            _logger->Log("SteamAPI_InitEx failed: " + std::string(errorMsg));
+            _logger->LogError("SteamAPI_InitEx failed: " + std::string(errorMsg));
+            std::cout << "SteamAPI_InitEx failed: " << errorMsg << std::endl;
             return false;
         }
 
@@ -101,24 +118,76 @@ bool UCOnline::IsSteamInitialized() const {
     return _steamInitialized;
 }
 
-void UCOnline::CreateAppIdFile() {
+bool UCOnline::WasRestartRequested() const {
+    return _restartRequested;
+}
+
+bool UCOnline::CreateAppIdFile() {
     if (_currentAppID == 0) {
         _logger->Log("Skipping steam_appid.txt creation - no appid configured.");
         _logger->Log("If there is one already, it will be ignored.");
-        return;
+        return true;
     }
 
     try {
-        std::string appIdFilePath = PathUtils::ResolveRelativeToExecutable("steam_appid.txt");
-        std::ofstream file(appIdFilePath);
-        if (file.is_open()) {
-            file << _currentAppID;
-            _logger->Log("Created steam_appid.txt at: " + appIdFilePath + " with appid: " + std::to_string(_currentAppID));
-        } else {
-            std::cerr << "Failed to create steam_appid.txt at: " << appIdFilePath << std::endl;
+        auto writeAppIdFile = [this](const std::string& appIdFilePath, bool createParentDirectories) -> bool {
+            try {
+                std::filesystem::path path(appIdFilePath);
+                if (createParentDirectories && !path.parent_path().empty()) {
+                    std::filesystem::create_directories(path.parent_path());
+                }
+
+                std::ofstream file(appIdFilePath, std::ios::trunc);
+                if (!file.is_open()) {
+                    const std::string message = "Failed to open steam_appid.txt for writing at: " + appIdFilePath;
+                    _logger->LogError(message);
+                    std::cerr << message << std::endl;
+                    return false;
+                }
+
+                file << _currentAppID;
+                if (!file.good()) {
+                    const std::string message = "Failed to write appid to steam_appid.txt at: " + appIdFilePath;
+                    _logger->LogError(message);
+                    std::cerr << message << std::endl;
+                    return false;
+                }
+
+                _logger->Log("Created steam_appid.txt at: " + appIdFilePath + " with appid: " + std::to_string(_currentAppID));
+                return true;
+            } catch (const std::exception& ex) {
+                _logger->LogException(ex, "Exception while writing steam_appid.txt at: " + appIdFilePath);
+                std::cerr << "Exception while writing steam_appid.txt at: " << appIdFilePath << " - " << ex.what() << std::endl;
+                return false;
+            }
+        };
+
+        std::string configuredAppIdFilePath = PathUtils::ResolveRelativeToExecutable(_steamAppIdFile.empty() ? "steam_appid.txt" : _steamAppIdFile);
+        if (!writeAppIdFile(configuredAppIdFilePath, true)) {
+            return false;
         }
+
+        if (!_gameExecutable.empty()) {
+            std::filesystem::path gameExecutablePath(PathUtils::ResolveRelativeToExecutable(_gameExecutable));
+            if (std::filesystem::exists(gameExecutablePath)) {
+                std::string gameAppIdFilePath = (gameExecutablePath.parent_path() / "steam_appid.txt").string();
+                if (gameAppIdFilePath != configuredAppIdFilePath) {
+                    if (!writeAppIdFile(gameAppIdFilePath, false)) {
+                        const std::string warningMessage = "Failed to create optional game-directory steam_appid.txt at: " + gameAppIdFilePath + " (continuing initialization).";
+                        _logger->LogWarning(warningMessage);
+                        std::cerr << warningMessage << std::endl;
+                    }
+                }
+            } else {
+                _logger->LogWarning("Skipping game-directory steam_appid.txt creation because configured game executable was not found: " + gameExecutablePath.string());
+            }
+        }
+
+        return true;
     } catch (const std::exception& ex) {
+        _logger->LogException(ex, "Failed to create steam_appid.txt");
         std::cerr << "Failed to create steam_appid.txt: " << ex.what() << std::endl;
+        return false;
     }
 }
 
@@ -244,23 +313,25 @@ bool UCOnline::LaunchGame() {
         return false;
     }
 
-    if (!std::filesystem::exists(_gameExecutable)) {
-        _logger->LogError("Game executable not found (Did you write it correctly? Path and all too, if applicable.): " + _gameExecutable);
-        std::cout << "Game executable not found (Did you write it correctly? Path and all too, if applicable.): " << _gameExecutable << std::endl;
+    std::string gameExecutablePath = PathUtils::ResolveRelativeToExecutable(_gameExecutable);
+
+    if (!std::filesystem::exists(gameExecutablePath)) {
+        _logger->LogError("Game executable not found (Did you write it correctly? Path and all too, if applicable.): " + gameExecutablePath);
+        std::cout << "Game executable not found (Did you write it correctly? Path and all too, if applicable.): " << gameExecutablePath << std::endl;
         return false;
     }
 
     try {
-        _logger->Log("Launching game: " + _gameExecutable + " " + _gameArguments);
-        std::cout << "Launching game: " << _gameExecutable << " " << _gameArguments << std::endl;
+        _logger->Log("Launching game: " + gameExecutablePath + " " + _gameArguments);
+        std::cout << "Launching game: " << gameExecutablePath << " " << _gameArguments << std::endl;
 
-        std::filesystem::path exePath(_gameExecutable);
+        std::filesystem::path exePath(gameExecutablePath);
         std::string workingDir = exePath.parent_path().string();
 
         STARTUPINFOA si = { sizeof(si) };
         PROCESS_INFORMATION pi;
 
-        std::string commandLine = "\"" + _gameExecutable + "\" " + _gameArguments;
+        std::string commandLine = "\"" + gameExecutablePath + "\" " + _gameArguments;
 
         if (CreateProcessA(NULL, const_cast<char*>(commandLine.c_str()), NULL, NULL, FALSE, 0, NULL, workingDir.c_str(), &si, &pi)) {
             _logger->Log("Game launched successfully! (PID: " + std::to_string(pi.dwProcessId) + ")");
@@ -305,6 +376,8 @@ void UCOnline::SaveConfig() {
     _config->SetAppID(_currentAppID);
     _config->SetGameExecutable(_gameExecutable);
     _config->SetGameArguments(_gameArguments);
+    _config->SetSteamApiDllPath(_steamApiDllPath);
+    _config->SetSteamAppIdFile(_steamAppIdFile);
     _config->SaveConfig();
 }
 
@@ -313,6 +386,8 @@ void UCOnline::ReloadConfig() {
     _currentAppID = _config->GetAppID();
     _gameExecutable = _config->GetGameExecutable();
     _gameArguments = _config->GetGameArguments();
+    _steamApiDllPath = _config->GetSteamApiDllPath();
+    _steamAppIdFile = _config->GetSteamAppIdFile();
 }
 
 Logger* UCOnline::GetLogger() {
@@ -339,5 +414,15 @@ std::string UCOnline::GetSteamApiDllPath() const {
 void UCOnline::SetSteamApiDllPath(const std::string& dllPath) {
     _steamApiDllPath = dllPath;
     _config->SetSteamApiDllPath(dllPath);
-    _config->SaveConfig();
+    _logger->Log("Steam API DLL path set to: " + (dllPath.empty() ? "default" : dllPath));
+}
+
+std::string UCOnline::GetSteamAppIdFile() const {
+    return _steamAppIdFile;
+}
+
+void UCOnline::SetSteamAppIdFile(const std::string& appIdFilePath) {
+    _steamAppIdFile = appIdFilePath;
+    _config->SetSteamAppIdFile(appIdFilePath);
+    _logger->Log("steam_appid.txt path set to: " + (appIdFilePath.empty() ? "steam_appid.txt" : appIdFilePath));
 }
