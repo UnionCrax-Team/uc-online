@@ -45,7 +45,7 @@ private:
     std::string _gameExecutable;
     std::string _gameArguments;
     std::string _steamApiDllPath;
-    std::string _ogAppId;
+    std::string _ogAppID;
 
     bool TryMultipleInitializationMethods();
     void LoadSteamApiDll();

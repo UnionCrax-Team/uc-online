@@ -20,6 +20,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         uc_online.GetLogger()->Log("Now starting uc-online initialization");
         uc_online.GetLogger()->Log("Appid set to: " + std::to_string(uc_online.GetCurrentAppID()));
 
+        // Set SteamOverlayGameId env var from ogAppID config
+        std::string ogAppID = uc_online.GetSteamOverlayGameId();
+        if (!ogAppID.empty()) {
+            SetEnvironmentVariableA("SteamOverlayGameId", ogAppID.c_str());
+            uc_online.GetLogger()->Log("Set SteamOverlayGameId env var to: " + ogAppID);
+        }
+
         if (!uc_online.InitializeUCOnline()) {
             uc_online.GetLogger()->LogError("uc-online initialization failed");
             MessageBoxW(NULL, L"Failed to initialize Steam", L"uc-online Error", MB_OK | MB_ICONERROR);

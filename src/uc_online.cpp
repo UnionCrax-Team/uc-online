@@ -11,7 +11,7 @@ UCOnline::UCOnline(const std::string& iniFilePath) {
     _gameExecutable = _config->GetGameExecutable();
     _gameArguments = _config->GetGameArguments();
     _steamApiDllPath = _config->GetSteamApiDllPath();
-    _ogAppId = _config->GetSteamOverlayGameId();
+    _ogAppID = _config->GetSteamOverlayGameId();
 
     std::string logFile = _config->GetValue("Logging", "LogFile", "uc_online.log");
     bool enableLogging = _config->GetValue("Logging", "EnableLogging", "true") == "true";
@@ -332,7 +332,7 @@ void UCOnline::SaveConfig() {
     _config->SetAppID(_currentAppID);
     _config->SetGameExecutable(_gameExecutable);
     _config->SetGameArguments(_gameArguments);
-    _config->SetSteamOverlayGameId(_ogAppId);
+    _config->SetSteamOverlayGameId(_ogAppID);
     _config->SaveConfig();
 }
 
@@ -341,7 +341,7 @@ void UCOnline::ReloadConfig() {
     _currentAppID = _config->GetAppID();
     _gameExecutable = _config->GetGameExecutable();
     _gameArguments = _config->GetGameArguments();
-    _ogAppId = _config->GetSteamOverlayGameId();
+    _ogAppID = _config->GetSteamOverlayGameId();
 }
 
 Logger* UCOnline::GetLogger() {
@@ -372,11 +372,11 @@ void UCOnline::SetSteamApiDllPath(const std::string& dllPath) {
 }
 
 std::string UCOnline::GetSteamOverlayGameId() const {
-    return _ogAppId;
+    return _ogAppID;
 }
 
 void UCOnline::SetSteamOverlayGameId(const std::string& gameId) {
-    _ogAppId = gameId;
+    _ogAppID = gameId;
     _config->SetSteamOverlayGameId(gameId);
     _config->SaveConfig();
 }

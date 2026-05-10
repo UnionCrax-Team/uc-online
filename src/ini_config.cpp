@@ -115,11 +115,11 @@ void IniConfig::SetSteamApiDllPath(const std::string& dllPath) {
 }
 
 std::string IniConfig::GetSteamOverlayGameId() {
-    return GetValue("uc-online", "ogAppId", "");
+    return GetValue("uc-online", "ogAppID", "");
 }
 
 void IniConfig::SetSteamOverlayGameId(const std::string& gameId) {
-    SetValue("uc-online", "ogAppId", gameId);
+    SetValue("uc-online", "ogAppID", gameId);
 }
 
 void IniConfig::CreateDefaultConfig() {
@@ -147,7 +147,7 @@ SteamApiDLLPath =
 
 # Original AppID to use for the steam overlay. This is what will show up in the overlay as the game that's running,
 # even if you do not own said game.
-ogAppId = 
+ogAppID = 
 
 [Logging]
 # Turns on logging. Not much gets logged, so it's not exactly useful. I recommend keeping it set to false, however with it being rewritten, it seems to behave differently.
