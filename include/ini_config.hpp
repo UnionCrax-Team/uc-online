@@ -21,6 +21,8 @@ public:
     void SetGameArguments(const std::string& arguments);
     std::string GetSteamApiDllPath();
     void SetSteamApiDllPath(const std::string& dllPath);
+    std::string GetSteamOverlayGameId();
+    void SetSteamOverlayGameId(const std::string& gameId);
 
 private:
     std::string _iniFilePath;

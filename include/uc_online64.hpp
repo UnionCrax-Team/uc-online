@@ -34,6 +34,8 @@ public:
 
     std::string GetSteamApiDllPath() const;
     void SetSteamApiDllPath(const std::string& dllPath);
+    std::string GetSteamOverlayGameId() const;
+    void SetSteamOverlayGameId(const std::string& gameId);
 
 private:
     bool _steamInitialized = false;
@@ -43,6 +45,7 @@ private:
     std::string _gameExecutable;
     std::string _gameArguments;
     std::string _steamApiDllPath;
+    std::string _ogAppId;
 
     bool TryMultipleInitializationMethods();
     void LoadSteamApi64Dll();

@@ -114,6 +114,14 @@ void IniConfig::SetSteamApiDllPath(const std::string& dllPath) {
     SaveConfig();
 }
 
+std::string IniConfig::GetSteamOverlayGameId() {
+    return GetValue("uc-online", "ogAppId", "");
+}
+
+void IniConfig::SetSteamOverlayGameId(const std::string& gameId) {
+    SetValue("uc-online", "ogAppId", gameId);
+}
+
 void IniConfig::CreateDefaultConfig() {
     std::string defaultConfig = R"(
 [uc-online]
@@ -131,13 +139,15 @@ GameExecutable =
 GameArguments = 
 
 # Set the path to the steam_appid.txt file to use. (If one does not exist, it will be generated with the appID set at the top.)
-SteamAppIdFile = steam_appid.txt
-
 # Path to steam_api.dll (leave empty to use default location - in the same folder next to the launcher.)
 # Only set the path as the folder containing the dll relative to the launcher.
 # Again, using UE5 games as an example:
 # game folder\Engine\Binaries\ThirdParty\Steamworks\Steamv153\Win64
 SteamApiDLLPath = 
+
+# Original AppID to use for the steam overlay. This is what will show up in the overlay as the game that's running,
+# even if you do not own said game.
+ogAppId = 
 
 [Logging]
 # Turns on logging. Not much gets logged, so it's not exactly useful. I recommend keeping it set to false, however with it being rewritten, it seems to behave differently.
